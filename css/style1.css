@@ -4,3 +4,7 @@ html {
 img {
 	position: absolute;
 }
+
+img.color2{
+  src: "img/png/s2.png";
+}
