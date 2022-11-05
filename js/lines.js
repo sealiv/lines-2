@@ -29,6 +29,7 @@ function init() {
       var y = (e.pageY - zeroY)  / cellSize | 0;
       if (cells[x][y].ball == null && checkRoad(selected.cell, cells[x][y])) {
          selected.setPosition(x, y);
+         checkTheSameColorAndDelete(cells[x][y]);
          selected.doJamp();
       }
    };
@@ -114,6 +115,7 @@ class Ball {
       this.img.classList.add("color" + color);
       document.getElementById("field").append(this.img);
       this.setPosition(x, y);
+      checkTheSameColorAndDelete(cells[x][y]);
       this.img.onclick = clickOnBall;
       balls.push(this);
    }
@@ -161,7 +163,7 @@ function addBalls() {
       }
       let position = getRandom(emptyCells.length - 1);
       let newCell = emptyCells[position];
-      let newBall = new Ball(newCell.x, newCell.y, getRandom(6) + 1);
+      let newBall = new Ball(newCell.x, newCell.y, getRandom(0) + 1);
    }
 }
 
@@ -253,4 +255,115 @@ function checkOneCell(cell, arrChecked) {
       return false;
    }
    return cell.ball === null;
+}
+
+function checkTheSameColorAndDelete(cell) {
+   let left = 0;
+   let right = 0;
+   let up = 0;
+   let down = 0;
+   let leftUp = 0;
+   let rightUp = 0;
+   let leftDown = 0;
+   let rightDown = 0;
+   let x = cell.x;
+   let y = cell.y;
+
+   for(let i = x-1; i>=0; i--) {
+      if (cells[i][y].ball !== null && cells[i][y].ball.color === cell.ball.color) {
+         left++;
+      } else break;
+   }
+   for(let i = x+1; i<=8; i++) {
+      if (cells[i][y].ball !== null && cells[i][y].ball.color === cell.ball.color) {
+         right++;
+      } else break;
+   }
+   for(let i = y-1; i>=0; i--) {
+      if (cells[x][i].ball !== null && cells[x][i].ball.color === cell.ball.color) {
+         up++;
+      } else break;
+   }
+   for(let i = y+1; i<=8; i++) {
+      if (cells[x][i].ball !== null && cells[x][i].ball.color === cell.ball.color) {
+         down++;
+      } else break;
+   }
+
+   for(let i = 1; x-i>=0 & y-i>=0; i++) {
+      if (cells[x-i][y-i].ball !== null && cells[x-i][y-i].ball.color === cell.ball.color) {
+         leftUp++;
+      } else break;
+   }
+   for(let i = 1; x+i<9 & y+i<9; i++) {
+      if (cells[x+i][y+i].ball !== null && cells[x+i][y+i].ball.color === cell.ball.color) {
+         rightDown++;
+      } else break;
+   }
+   for(let i = 1; x-i>=0 & y+i<9; i++) {
+      if (cells[x-i][y+i].ball !== null && cells[x-i][y+i].ball.color === cell.ball.color) {
+         leftDown++;
+      } else break;
+   }
+   for(let i = 1; x+i<9 & y-i>=0; i++) {
+      if (cells[x+i][y-i].ball !== null && (cells[x+i][y-i].ball.color === cell.ball.color)) {
+         rightUp++;
+      } else break;
+   }
+   let arrayToDelete = [];
+   if(up + down >= 4) {
+      for(let i=y-up; i<=y+down; i++){
+         if(i !== y) {
+            arrayToDelete.push(cells[x][i].ball);
+         }
+      }
+   }
+   if(left + right >= 4) {
+      for(let i=x-left; i<=x+right; i++){
+         if (i !== x) {
+            arrayToDelete.push(cells[i][y].ball);
+         }
+      }
+   }
+   if(leftDown + rightUp >= 4) {
+      let length = leftDown + rightUp;
+      for(let i=0; i<= length; i++){
+         if(i !== leftDown) {
+            arrayToDelete.push(cells[x-leftDown+i][y+leftDown-i].ball);
+         }
+      }
+   }
+   if(leftUp + rightDown >= 4) {
+      let length = leftUp + rightDown;
+      console.log("rightDown=" + rightDown + ", leftUp=" + leftUp);
+      for(let i=0; i<= length; i++){
+         if(i !== leftUp) {
+            console.log("{" + (x-leftUp+i) + "," + y-leftUp+i + "}");
+            arrayToDelete.push(cells[x-leftUp+i][y-leftUp+i].ball);
+         }
+      }
+      console.log("arr: " + arrayToDelete);
+   }
+   
+   if(arrayToDelete.length > 0) {
+      arrayToDelete.push(cells[x][y].ball);
+   }
+
+   deleteBalls(arrayToDelete);
+}
+
+function deleteBalls(ballsToDelete) {
+   console.log("removing... " + ballsToDelete);
+   while(ballsToDelete.length > 0) {
+      let ball = ballsToDelete.pop();
+      remove(ball);
+   }
+}
+
+function remove(ball) {
+   ball.cell.deleteBall();
+   emptyCells.push(ball.cell);
+   document.getElementById(ball.id).remove();
+   balls.splice(balls.indexOf(ball), 1);
+   ball = null;
 }
