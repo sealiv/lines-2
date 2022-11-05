@@ -27,18 +27,16 @@ function init() {
       if (selected == null) return;
       var x = (e.pageX - zeroX - field.offsetLeft) / cellSize | 0;
       var y = (e.pageY - zeroY)  / cellSize | 0;
-      if (cells[x][y].ball == null) {
+      if (cells[x][y].ball == null && checkRoad(selected.cell, cells[x][y])) {
          selected.setPosition(x, y);
          selected.doJamp();
       }
-      // findFillingCells();
    };
 
    boardImage.img.ondblclick = function(e) {
       var x = (e.pageX - zeroX - field.offsetLeft) / cellSize | 0;
       var y = (e.pageY - zeroY)  / cellSize | 0;
       new Ball(x, y, getRandom(6) + 1);
-      // findFillingCells();
    };
 
 
@@ -118,8 +116,6 @@ class Ball {
       this.setPosition(x, y);
       this.img.onclick = clickOnBall;
       balls.push(this);
-      // this.setCell(cells[x][y]);
-      // console.log("new Ball: " + cells[x][y]);
    }
 
    setPosition(x, y) {
@@ -187,18 +183,6 @@ function findBall(id) {
    return balls.find((item) => item.id === id);
 }
 
-function findFillingCells() {
-   var cellsWithBall = [];
-   for(let x=0; x < 9; x++) {
-      for(let y=0; y<9; y++) {
-         if(cells[x][y].ball != null) {
-            cellsWithBall.push(cells[x][y]);
-         }
-      }
-   }
-   console.log("Filled cells: " + cellsWithBall);
-}
-
 function getRandom(max) {
    result = Math.floor(Math.random() * (max + 1));
    if ( result > max) {
@@ -227,4 +211,46 @@ function fillSell() {
       }
       cells.push(cellsX);  
    }
+}
+
+
+function checkRoad(cellStart, cellEnd) {
+   var checkedCells = [];
+   var needCheck = [];
+   needCheck.push(cellStart);
+   return checkRoadArray(cellEnd, checkedCells, needCheck);
+}
+
+function checkRoadArray(cellEnd, arrChecked, arrNeedCheck) {
+   if(arrNeedCheck.length === 0) {
+      console.log("Road doesn't exist...")
+      return false;
+   }
+   let tempCell = arrNeedCheck.pop();
+   if (Math.abs(tempCell.x - cellEnd.x) + Math.abs(tempCell.y - cellEnd.y) === 1) {
+      return true;
+   }
+   let x = tempCell.x;
+   let y = tempCell.y;
+   if (tempCell.x > 0 && checkOneCell(cells[x - 1][y], arrChecked)) {
+      arrNeedCheck.push(cells[x - 1][y]);
+   }
+   if (tempCell.x < 8 && checkOneCell(cells[x + 1][y], arrChecked)) {
+      arrNeedCheck.push(cells[x + 1][y]);
+   }
+   if (tempCell.y > 0 && checkOneCell(cells[x][y - 1], arrChecked)) {
+      arrNeedCheck.push(cells[x][y - 1]);
+   }
+   if (tempCell.y < 8 && checkOneCell(cells[x][y + 1], arrChecked)) {
+      arrNeedCheck.push(cells[x][y + 1]);
+   }
+   arrChecked.push(tempCell);
+   return checkRoadArray(cellEnd, arrChecked, arrNeedCheck);
+}
+
+function checkOneCell(cell, arrChecked) {
+   if(arrChecked.indexOf(cell) >= 0) {
+      return false;
+   }
+   return cell.ball === null;
 }
