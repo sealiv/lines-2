@@ -9,6 +9,21 @@ var ballId = 0;
 var balls = [];
 var cells = [];
 var emptyCount = 9 * 9;
+var needAddBalls = true;
+
+function reinit() {
+   balls.forEach((b)=> {
+      cells[b.x][b.y] = null;
+      document.getElementById(b.id).remove();
+   })
+   score = 0;
+   // ballId = 0;
+   balls = [];
+   emptyCount = 9 * 9;
+   needAddBalls = true;
+   // fillCell();
+   addBalls();
+}
 
 function init() {
    var field = document.getElementById("field");
@@ -18,6 +33,8 @@ function init() {
    let newWinnerImage = new PanelImage("newWinnerImg", false);
    zeroX = window.outerWidth/2 - mainImage.img.naturalWidth/2 + offsetCells - field.offsetLeft;
    zeroY = boardImage.img.offsetTop + 80;
+   fillCell();
+   addBalls();
    resize();
 
    window.onresize = function(e) {
@@ -31,8 +48,9 @@ function init() {
       var y = (e.pageY - zeroY)  / cellSize | 0;
       if (cells[x][y] == null && checkRoad(new EmptyCell(x, y))) {
          selected.setPosition(x, y);
-         checkTheSameColorAndDelete(selected);
+         checkTheSameColorAndDelete(selected, true);
          selected.doJamp();
+         addBalls();
       }
    };
 
@@ -45,7 +63,7 @@ function init() {
      newWinnerImage.setLeft(zeroX + cellSize);
    //   console.log("zeroX = " + zeroX);
    //   console.log("zeroY = " + zeroY);
-     fillSell();
+     setImageOffsetsIfResize();
    };
 }
 
@@ -98,7 +116,7 @@ class Ball {
       this.img.setAttribute("src", "img/png/s" + color + ".png");
       document.getElementById("field").append(this.img);
       this.setPosition(x, y);
-      checkTheSameColorAndDelete(this);
+      checkTheSameColorAndDelete(this, false);
       this.img.onclick = clickOnBall;
       balls.push(this);
    }
@@ -134,15 +152,21 @@ class Ball {
 }
 
 function addBalls() {
+   if(!needAddBalls) {
+      return;
+   }
    for (let i=0; i<3; i++) {
       if(emptyCount === 0) {
          console.log("THE END");
+         reinit();
          return;
       }
       let newCell = findPosition();
-      let newBall = new Ball(newCell.x, newCell.y, getRandom(maxColor-1) + 1);
+      new Ball(newCell.x, newCell.y, getRandom(maxColor-1) + 1);
    }
+   needAddBalls = false;
 }
+
 function findPosition() {
    let position = getRandom(emptyCount - 1);
    emptyCount--;
@@ -196,7 +220,7 @@ function setStanding() {
    selected = null;
 }
 
-function fillSell() {
+function fillCell() {
    for (let x = 0; x < 9; x++) {
       var cellsX = [];
       for (let y = 0; y < 9; y++) {
@@ -250,7 +274,7 @@ function isNeedAddCellToCheck(x, y, alreadyCheckedArray, needCheckArray){
    return !checkedElement && !alreadyAddedElement;
 }
 
-function checkTheSameColorAndDelete(ball) {
+function checkTheSameColorAndDelete(ball, isMove) {
    let left = 0;
    let right = 0;
    let up = 0;
@@ -327,7 +351,12 @@ function checkTheSameColorAndDelete(ball) {
          arrayToDelete.push(cells[x-leftUp+i][y-leftUp+i]);
       }
    }
-   
+   // console.log("isMoved = " + isMove + ",  size = " + arrayToDelete.length);
+
+   if(arrayToDelete.length === 0 && isMove) {
+      // console.log("need add 3 balls");
+      needAddBalls = true;
+   }
    if(arrayToDelete.length > 0) {
       deleteBalls(getBallsWithoutDuplicates(arrayToDelete));
    }
@@ -347,6 +376,7 @@ function remove(ball) {
    document.getElementById(ball.id).remove();
    balls.splice(balls.indexOf(ball), 1);
    ball = null;
+   emptyCount++;
 }
 
 function getBallsWithoutDuplicates(arr) {
@@ -358,4 +388,8 @@ function getBallsWithoutDuplicates(arr) {
       }
    }
    return distinctArray;
+}
+
+function setImageOffsetsIfResize() {
+   balls.forEach((b) => b.setImageOffsets(b.img, b.x, b.y));
 }
