@@ -1,15 +1,17 @@
 var score = 0;
 var zeroX = 0;
 var zeroY = 0;
-var maxColor = 7;
+var maxColor =  7;
 var cellSize = 64;
+var cellSizeMini = 52;
 var offsetCells = 313;
 var selected = null;
 var ballId = 0;
 var balls = [];
+var helpBalls = [];
 var cells = [];
 var emptyCount = 9 * 9;
-var needAddBalls = true;
+var winner = 100;
 
 function reinit() {
    balls.forEach((b)=> {
@@ -17,11 +19,10 @@ function reinit() {
       document.getElementById(b.id).remove();
    })
    score = 0;
-   // ballId = 0;
    balls = [];
    emptyCount = 9 * 9;
-   needAddBalls = true;
-   // fillCell();
+   setScore();
+   setScoreWinner(winner);
    addBalls();
 }
 
@@ -33,7 +34,9 @@ function init() {
    let newWinnerImage = new PanelImage("newWinnerImg", false);
    zeroX = window.outerWidth/2 - mainImage.img.naturalWidth/2 + offsetCells - field.offsetLeft;
    zeroY = boardImage.img.offsetTop + 80;
+   setScoreWinner(winner);
    fillCell();
+   initHelpColor();
    addBalls();
    resize();
 
@@ -48,9 +51,10 @@ function init() {
       var y = (e.pageY - zeroY)  / cellSize | 0;
       if (cells[x][y] == null && checkRoad(new EmptyCell(x, y))) {
          selected.setPosition(x, y);
-         checkTheSameColorAndDelete(selected, true);
-         selected.doJamp();
-         addBalls();
+         var isNeedAddBalls = selected.moveAndDelete();
+         if(isNeedAddBalls) {
+            addBalls();
+         }
       }
    };
 
@@ -61,8 +65,8 @@ function init() {
      boardImage.setLeft(zeroX);
      resultImage.setLeft(zeroX + cellSize);
      newWinnerImage.setLeft(zeroX + cellSize);
-   //   console.log("zeroX = " + zeroX);
-   //   console.log("zeroY = " + zeroY);
+     document.getElementById("div_score").style.left = zeroX - 145;
+     document.getElementById("div_winner").style.left = zeroX + 695;
      setImageOffsetsIfResize();
    };
 }
@@ -116,7 +120,6 @@ class Ball {
       this.img.setAttribute("src", "img/png/s" + color + ".png");
       document.getElementById("field").append(this.img);
       this.setPosition(x, y);
-      checkTheSameColorAndDelete(this, false);
       this.img.onclick = clickOnBall;
       balls.push(this);
    }
@@ -136,9 +139,11 @@ class Ball {
       image.style.top = zeroY - 11 - cellSize + y * cellSize | 0;
    }
 
-   doJamp() {
-      this.img.setAttribute("src", "img/png/s" + selected.color + ".png");
-      selected = null;
+   moveAndDelete() {
+      let currentBall = selected;
+      setStanding();
+      let isCoincidence = checkTheSameColorAndDelete(currentBall);
+      return !isCoincidence;
    } 
 
    toString(){
@@ -151,10 +156,21 @@ class Ball {
    }
 }
 
-function addBalls() {
-   if(!needAddBalls) {
-      return;
+function getCurrentColor() {
+   let currentColor = helpBalls[0];
+   helpBalls[0] = helpBalls[1];
+   helpBalls[1] = helpBalls[2]
+   helpBalls[2] = getRandom(maxColor - 1) + 1;
+   return currentColor;
+}
+function initHelpColor() {
+   for(let i=0; i<3; i++) {
+      helpBalls[i] = getRandom(maxColor - 1) + 1;
+      createHelpBall(helpBalls[i], i);
    }
+}
+
+function addBalls() {
    for (let i=0; i<3; i++) {
       if(emptyCount === 0) {
          console.log("THE END");
@@ -162,9 +178,10 @@ function addBalls() {
          return;
       }
       let newCell = findPosition();
-      new Ball(newCell.x, newCell.y, getRandom(maxColor-1) + 1);
+      let ball = new Ball(newCell.x, newCell.y, getCurrentColor());
+      checkTheSameColorAndDelete(ball);
    }
-   needAddBalls = false;
+   changeHelpBall();
 }
 
 function findPosition() {
@@ -274,7 +291,7 @@ function isNeedAddCellToCheck(x, y, alreadyCheckedArray, needCheckArray){
    return !checkedElement && !alreadyAddedElement;
 }
 
-function checkTheSameColorAndDelete(ball, isMove) {
+function checkTheSameColorAndDelete(ball) {
    let left = 0;
    let right = 0;
    let up = 0;
@@ -351,14 +368,13 @@ function checkTheSameColorAndDelete(ball, isMove) {
          arrayToDelete.push(cells[x-leftUp+i][y-leftUp+i]);
       }
    }
-   // console.log("isMoved = " + isMove + ",  size = " + arrayToDelete.length);
 
-   if(arrayToDelete.length === 0 && isMove) {
-      // console.log("need add 3 balls");
-      needAddBalls = true;
+   if(arrayToDelete.length === 0) {
+      return false;
    }
    if(arrayToDelete.length > 0) {
       deleteBalls(getBallsWithoutDuplicates(arrayToDelete));
+      return true;
    }
 }
 
@@ -368,7 +384,7 @@ function deleteBalls(ballsToDelete) {
       remove(ball);
       score = score + 2;
    }
-   console.log("Score = " + score);
+   setScore();
 }
 
 function remove(ball) {
@@ -392,4 +408,39 @@ function getBallsWithoutDuplicates(arr) {
 
 function setImageOffsetsIfResize() {
    balls.forEach((b) => b.setImageOffsets(b.img, b.x, b.y));
+   setHelpImageOffsetsAll();
+}
+
+function setScore(){
+   let tablo = document.getElementById("score");
+   tablo.innerHTML = score;
+}
+
+function setScoreWinner(score){
+   let tablo = document.getElementById("winner");
+   tablo.innerHTML = score;
+}
+
+
+function createHelpBall(color, index){
+   let img = document.createElement("img");
+   let id = "h_" + index;
+   img.setAttribute("id", id);
+   img.setAttribute("src", "img/mini/s" + color + "_mini.png");
+   document.getElementById("field").append(img);
+   setHelpImageOffset(img, index);
+}
+function changeHelpBall() {
+   for(let i=0; i<3; i++){
+      document.getElementById("h_" + i).setAttribute("src", "img/mini/s" + helpBalls[i] + "_mini.png")
+   }
+}
+function setHelpImageOffset(img, index) {
+   img.style.left = zeroX + 204 + index * cellSizeMini | 0;
+   img.style.top = zeroY - 130 | 0;
+}
+function setHelpImageOffsetsAll() {
+   for(let i=0; i<3; i++){
+      setHelpImageOffset(document.getElementById("h_" + i), i);
+   }
 }

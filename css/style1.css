@@ -5,6 +5,8 @@ img {
 	position: absolute;
 }
 
-img.color2{
-  src: "img/png/s2.png";
+.score{
+  position: absolute;
+  top: 94px;
+  font-size: 24px;
 }

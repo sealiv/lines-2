@@ -10,14 +10,15 @@
 
 	<body>
 		<nav class="navbar navbar-expand-sm bg-dark navbar-dark fixed-top">
-			<a class="navbar-brand" href="#">Logo</a>
-			<ul class="navbar-nav">
-				<li class="nav-item">
+			<button class="btn btn-outline-success" onclick="reinit();">Начать новую</button>
+			<!-- <a class="navbar-brand" href="#">Logo</a> -->
+			 <ul class="navbar-nav">
+			<!--	<li class="nav-item">
 					<a class="nav-link" onclick="addBalls();">Add 3 balls</a>
 				</li>
-				<li class="nav-item">
+				<li class="nav-item">					
 					<a class="nav-link" onclick="reinit();">Начать новую</a>
-				</li>
+				</li> -->
 			</ul>
 		</nav>
 		
@@ -28,11 +29,16 @@
 		  		<img src="img/PanelCentre.png" id="cellsImg" style="top: 70px">
 		  		<img src="img/Panel02.png" id="resultImg" style="top: 134px">
 		  		<img src="img/Panel03.png" id="newWinnerImg" style="top: 134px">
+
 			</div>
    		</div>
+		<div class="score" id="div_score" style="left: 155px;">
+			<b id="score">0</b>
+		</div>
+		<div class="score" id="div_winner" style="left: 1000px;">
+			<b id="winner">0</b>
+		</div>
 
-		<script>
-			init();
-		</script>
+		<script>init();</script>
 	</body>
 </html>
